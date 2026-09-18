@@ -14,7 +14,7 @@ The API runs by default on `http://127.0.0.1:8000`.
 
 To start the server:
 ```bash
-uv run uvicorn slm_router.api:app --host 127.0.0.1 --port 8000
+uv run uvicorn --app-dir src slm_router.api:app --host 127.0.0.1 --port 8000
 ```
 
 ---

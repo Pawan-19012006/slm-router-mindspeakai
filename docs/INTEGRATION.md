@@ -73,7 +73,7 @@ For microservices, web apps, or applications written in other languages (Node.js
 
 ### Starting the Service
 ```bash
-uv run uvicorn slm_router.api:app --host 0.0.0.0 --port 8000
+uv run uvicorn --app-dir src slm_router.api:app --host 127.0.0.1 --port 8000
 ```
 
 ### Classify Only (`POST /classify`)
@@ -128,7 +128,7 @@ You can change the active local causal language model without modifying applicat
    ```
 2. Or via environment variable before launching the server or Python script:
    ```bash
-   LOCAL_MODEL=HuggingFaceTB/SmolLM2-360M-Instruct uv run uvicorn slm_router.api:app
+   LOCAL_MODEL=HuggingFaceTB/SmolLM2-360M-Instruct uv run uvicorn --app-dir src slm_router.api:app --host 127.0.0.1 --port 8000
    ```
 
 If unset, the system defaults to `Qwen/Qwen2.5-1.5B-Instruct`.

@@ -58,7 +58,7 @@ cp .env.example .env
 # GEMINI_API_KEY=your_key_here
 
 # 5. Launch the FastAPI server
-uv run uvicorn slm_router.api:app --host 127.0.0.1 --port 8000
+uv run uvicorn --app-dir src slm_router.api:app --host 127.0.0.1 --port 8000
 ```
 
 ---
@@ -78,7 +78,7 @@ Configuration is managed via `.env` or system environment variables:
 
 ## FastAPI Endpoints
 
-When running `uv run uvicorn slm_router.api:app`, the service exposes three endpoints on `http://127.0.0.1:8000`:
+When running `uv run uvicorn --app-dir src slm_router.api:app --host 127.0.0.1 --port 8000`, the service exposes three endpoints on `http://127.0.0.1:8000`:
 
 | Method | Path | Request Body | Description |
 | :--- | :--- | :--- | :--- |
@@ -162,7 +162,7 @@ You can swap the local model without editing any code in the router or classifie
 
 ```bash
 # Set in shell or in .env
-LOCAL_MODEL="HuggingFaceTB/SmolLM2-360M-Instruct" uv run uvicorn slm_router.api:app
+LOCAL_MODEL="HuggingFaceTB/SmolLM2-360M-Instruct" uv run uvicorn --app-dir src slm_router.api:app --host 127.0.0.1 --port 8000
 ```
 
 The runtime supports causal language models compatible with `AutoTokenizer` and `AutoModelForCausalLM`. See [docs/MODELS.md](docs/MODELS.md) for compatibility details and empirical benchmarks.

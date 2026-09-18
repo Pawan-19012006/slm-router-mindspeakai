@@ -61,7 +61,7 @@ The local model identifier is resolved via a three-tier hierarchy:
 No code modifications in `router.py`, `classifier_v3.py`, or `api.py` are required to test or swap models. Simply update `LOCAL_MODEL` in `.env` or in your execution environment and start the service:
 
 ```bash
-LOCAL_MODEL="HuggingFaceTB/SmolLM2-360M-Instruct" uv run uvicorn slm_router.api:app
+LOCAL_MODEL="HuggingFaceTB/SmolLM2-360M-Instruct" uv run uvicorn --app-dir src slm_router.api:app --host 127.0.0.1 --port 8000
 ```
 
 ---

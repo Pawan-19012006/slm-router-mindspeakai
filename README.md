@@ -27,8 +27,65 @@ cp .env.example .env
 # 5. Add your Gemini API key in .env
 # Edit .env and set: GEMINI_API_KEY=your_actual_key
 
-# 6. Launch the Streamlit application
-uv run streamlit run app.py
+# 6. Launch the FastAPI server
+uv run uvicorn slm_router.api:app --host 127.0.0.1 --port 8000
+```
+
+### API Usage
+
+Start the server:
+```bash
+uv run uvicorn slm_router.api:app --host 127.0.0.1 --port 8000
+```
+
+#### 1. Health Check (`GET /health`)
+```bash
+curl -s http://127.0.0.1:8000/health
+```
+Response:
+```json
+{
+  "status": "healthy",
+  "model": "Qwen/Qwen2.5-1.5B-Instruct"
+}
+```
+
+#### 2. Classify Query (`POST /classify`)
+```bash
+curl -s -X POST http://127.0.0.1:8000/classify \
+  -H "Content-Type: application/json" \
+  -d '{"query": "What is 2 + 2?"}'
+```
+Response:
+```json
+{
+  "query": "What is 2 + 2?",
+  "label": "LOCAL",
+  "raw_output": "LOCAL"
+}
+```
+
+#### 3. Route Query (`POST /route`)
+```bash
+curl -s -X POST http://127.0.0.1:8000/route \
+  -H "Content-Type: application/json" \
+  -d '{"query": "What is 2 + 2?"}'
+```
+Response:
+```json
+{
+  "query": "What is 2 + 2?",
+  "route": "LOCAL",
+  "handler": "Local SLM",
+  "response": "The sum of 2 plus 2 is 4.",
+  "success": true,
+  "model": "Qwen/Qwen2.5-1.5B-Instruct",
+  "timings": {
+    "classification": 1.12,
+    "handler": 0.68,
+    "total": 1.80
+  }
+}
 ```
 
 

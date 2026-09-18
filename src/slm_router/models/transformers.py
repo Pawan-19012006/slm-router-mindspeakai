@@ -1,11 +1,12 @@
-"""Generic Hugging Face Transformers model runtime."""
-
+import os
 from typing import Any, Dict, List, Optional
+from dotenv import load_dotenv
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from slm_router.models.base import BaseModel
 
+load_dotenv()
 
 DEFAULT_MODEL_NAME = "Qwen/Qwen2.5-1.5B-Instruct"
 
@@ -23,15 +24,17 @@ class TransformersRuntime(BaseModel):
     """Generic Hugging Face Transformers model runtime.
 
     Loads and executes causal language models supported by AutoTokenizer and AutoModelForCausalLM.
-    Default model is Qwen/Qwen2.5-1.5B-Instruct.
+    Default model is Qwen/Qwen2.5-1.5B-Instruct (configurable via LOCAL_MODEL environment variable).
     """
 
     def __init__(
         self,
-        model_name: str = DEFAULT_MODEL_NAME,
+        model_name: Optional[str] = None,
         device: Optional[torch.device] = None,
     ):
-        self.model_name = model_name
+        load_dotenv()
+        env_model = os.getenv("LOCAL_MODEL", "").strip()
+        self.model_name = model_name or (env_model if env_model else DEFAULT_MODEL_NAME)
         self.device = torch.device(device) if device is not None else get_default_device()
         print(f"Loading Transformers model '{self.model_name}' on device: {self.device}...")
 

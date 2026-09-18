@@ -140,6 +140,65 @@ class TestModelAbstraction(unittest.TestCase):
         self.assertTrue(issubclass(SLM, TransformersRuntime))
         self.assertTrue(issubclass(SLM, BaseModel))
 
+    def test_default_model_resolves_when_local_model_unset(self):
+        """Verify TransformersRuntime defaults to Qwen/Qwen2.5-1.5B-Instruct when LOCAL_MODEL is unset."""
+        with patch.dict("os.environ", {}, clear=True), \
+             patch("slm_router.models.transformers.AutoTokenizer.from_pretrained") as mock_tok, \
+             patch("slm_router.models.transformers.AutoModelForCausalLM.from_pretrained") as mock_model:
+            mock_model_instance = MagicMock()
+            mock_model.return_value = mock_model_instance
+
+            runtime = TransformersRuntime()
+            self.assertEqual(runtime.model_name, "Qwen/Qwen2.5-1.5B-Instruct")
+            mock_tok.assert_called_once_with("Qwen/Qwen2.5-1.5B-Instruct")
+            mock_model.assert_called_once_with("Qwen/Qwen2.5-1.5B-Instruct")
+
+    def test_custom_model_configured_via_local_model_env(self):
+        """Verify TransformersRuntime resolves model name from LOCAL_MODEL environment variable."""
+        custom_id = "HuggingFaceTB/SmolLM2-360M-Instruct"
+        with patch.dict("os.environ", {"LOCAL_MODEL": custom_id}, clear=True), \
+             patch("slm_router.models.transformers.AutoTokenizer.from_pretrained") as mock_tok, \
+             patch("slm_router.models.transformers.AutoModelForCausalLM.from_pretrained") as mock_model:
+            mock_model_instance = MagicMock()
+            mock_model.return_value = mock_model_instance
+
+            runtime = TransformersRuntime()
+            self.assertEqual(runtime.model_name, custom_id)
+            mock_tok.assert_called_once_with(custom_id)
+            mock_model.assert_called_once_with(custom_id)
+
+    def test_explicit_model_name_overrides_local_model_env(self):
+        """Verify explicitly supplied model_name overrides LOCAL_MODEL environment variable."""
+        with patch.dict("os.environ", {"LOCAL_MODEL": "env/model-id"}, clear=True), \
+             patch("slm_router.models.transformers.AutoTokenizer.from_pretrained") as mock_tok, \
+             patch("slm_router.models.transformers.AutoModelForCausalLM.from_pretrained") as mock_model:
+            mock_model_instance = MagicMock()
+            mock_model.return_value = mock_model_instance
+
+            runtime = TransformersRuntime(model_name="explicit/model-id")
+            self.assertEqual(runtime.model_name, "explicit/model-id")
+            mock_tok.assert_called_once_with("explicit/model-id")
+            mock_model.assert_called_once_with("explicit/model-id")
+
+    def test_router_uses_configured_local_model_by_default(self):
+        """Verify Router default initialization instantiates runtime with configured LOCAL_MODEL."""
+        custom_id = "custom/configured-router-model"
+        with patch.dict("os.environ", {"LOCAL_MODEL": custom_id}, clear=True), \
+             patch("slm_router.models.transformers.AutoTokenizer.from_pretrained"), \
+             patch("slm_router.models.transformers.AutoModelForCausalLM.from_pretrained"):
+            router = Router()
+            self.assertEqual(router.model.model_name, custom_id)
+            self.assertEqual(router.slm.model_name, custom_id)
+
+    def test_legacy_slm_wrapper_resolves_local_model_env(self):
+        """Verify legacy SLM() constructor also respects LOCAL_MODEL environment variable."""
+        custom_id = "custom/legacy-slm-model"
+        with patch.dict("os.environ", {"LOCAL_MODEL": custom_id}, clear=True), \
+             patch("slm_router.models.transformers.AutoTokenizer.from_pretrained"), \
+             patch("slm_router.models.transformers.AutoModelForCausalLM.from_pretrained"):
+            slm = SLM()
+            self.assertEqual(slm.model_name, custom_id)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -24,6 +24,6 @@ class SLM(TransformersRuntime):
     def __init__(
         self,
         device: Optional[torch.device] = None,
-        model_name: str = DEFAULT_MODEL_NAME,
+        model_name: Optional[str] = None,
     ):
         super().__init__(model_name=model_name, device=device)

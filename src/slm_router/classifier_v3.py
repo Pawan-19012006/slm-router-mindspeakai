@@ -1,4 +1,6 @@
-from slm_router.model import SLM
+from typing import Optional, Tuple
+from slm_router.models.base import BaseModel
+from slm_router.models.transformers import TransformersRuntime
 
 VALID_LABELS = {"LOCAL", "COMMAND", "CLOUD"}
 
@@ -84,21 +86,22 @@ def extract_label(raw_output: str) -> str:
 
 class ClassifierV3:
 
-    def __init__(self, slm):
-        self.slm = slm
+    def __init__(self, model: Optional[BaseModel] = None):
+        self.model = model if model is not None else TransformersRuntime()
+        self.slm = self.model  # Backward-compatibility alias
         self.last_raw_output = ""
 
     def classify(self, query: str) -> str:
         label, _ = self.classify_with_raw(query)
         return label
 
-    def classify_with_raw(self, query: str) -> tuple[str, str]:
+    def classify_with_raw(self, query: str) -> Tuple[str, str]:
         messages = [
             {"role": "system", "content": CLASSIFIER_V3_SYSTEM_PROMPT},
             {"role": "user", "content": query},
         ]
 
-        raw_output = self.slm.generate(
+        raw_output = self.model.generate(
             messages=messages,
             max_new_tokens=4,
             do_sample=False

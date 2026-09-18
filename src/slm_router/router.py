@@ -3,7 +3,8 @@
 import time
 from typing import Any, Dict, Optional
 
-from slm_router.model import SLM
+from slm_router.models.base import BaseModel
+from slm_router.models.transformers import TransformersRuntime
 from slm_router.classifier_v3 import ClassifierV3
 from slm_router.cloud import CloudHandler
 
@@ -35,15 +36,18 @@ COMMAND_RESPONSE_PROMPT = (
 class Router:
     def __init__(
         self,
-        slm: Optional[SLM] = None,
+        model: Optional[BaseModel] = None,
         classifier: Optional[ClassifierV3] = None,
         command_executor: Optional[Any] = None,
         cloud_handler: Optional[CloudHandler] = None,
+        slm: Optional[BaseModel] = None,
     ):
-        # Reuse single SLM instance across classification and local generation
-        self.slm = slm if slm is not None else SLM()
+        # Allow either model or slm parameter for backwards compatibility
+        active_model = model if model is not None else slm
+        self.model = active_model if active_model is not None else TransformersRuntime()
+        self.slm = self.model  # Backward compatibility alias
 
-        self.classifier = classifier if classifier is not None else ClassifierV3(self.slm)
+        self.classifier = classifier if classifier is not None else ClassifierV3(self.model)
         self.commands = command_executor
         self.cloud = cloud_handler if cloud_handler is not None else CloudHandler()
 
@@ -96,18 +100,19 @@ class Router:
         return routed_result
 
     def _handle_local(self, query: str, raw_output: str) -> Dict[str, Any]:
-        """Generate direct answer using the local SLM."""
+        """Generate direct answer using the local model."""
         messages = [
             {"role": "system", "content": LOCAL_ASSISTANT_SYSTEM_PROMPT},
             {"role": "user", "content": query},
         ]
 
-        local_answer = self.slm.generate(
+        local_answer = self.model.generate(
             messages=messages,
             max_new_tokens=256,
             do_sample=False,
         )
 
+        model_name = getattr(self.model, "model_name", "Qwen/Qwen2.5-1.5B-Instruct")
 
         return {
             "query": query,
@@ -118,16 +123,16 @@ class Router:
             "result": local_answer,
             "success": True,
             "mode": "LOCAL",
-            "model": "Qwen/Qwen2.5-1.5B-Instruct",
+            "model": model_name,
             "details": {
-                "model": "Qwen/Qwen2.5-1.5B-Instruct",
+                "model": model_name,
                 "classification_token": raw_output,
                 "status": "COMPLETED_LOCALLY",
             },
         }
 
     def _handle_command(self, query: str, raw_output: str) -> Dict[str, Any]:
-        """Dynamically generate action confirmation using the local SLM."""
+        """Dynamically generate action confirmation using the local model."""
         messages = [
             {
                 "role": "user",
@@ -135,13 +140,14 @@ class Router:
             }
         ]
 
-        command_answer = self.slm.generate(
+        command_answer = self.model.generate(
             messages=messages,
             max_new_tokens=150,
             do_sample=False,
         )
 
         clean_answer = command_answer.strip()
+        model_name = getattr(self.model, "model_name", "Qwen/Qwen2.5-1.5B-Instruct")
 
         return {
             "query": query,
@@ -154,9 +160,9 @@ class Router:
             "result": clean_answer,
             "success": True,
             "mode": "LOCAL",
-            "model": "Qwen/Qwen2.5-1.5B-Instruct",
+            "model": model_name,
             "details": {
-                "model": "Qwen/Qwen2.5-1.5B-Instruct",
+                "model": model_name,
                 "classification_token": raw_output,
                 "status": "EXECUTED_DYNAMICALLY",
                 "success": True,
